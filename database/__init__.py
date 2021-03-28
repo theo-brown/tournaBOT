@@ -1,4 +1,5 @@
 import aiosqlite
+from .mongo import MongoCog
 
 database_file = 'database/database.db'
 
@@ -20,3 +21,4 @@ class DatabaseExtension:
 
 def setup(bot):
     bot.db = DatabaseExtension(bot)
+    bot.add_cog(MongoCog(bot))

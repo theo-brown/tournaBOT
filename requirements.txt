@@ -7,3 +7,4 @@ humanize==3.2.0
 bidict==0.21.2
 aiosqlite==0.17.0
 python-dotenv==0.15.0
+aiofiles~=0.6.0
