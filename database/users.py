@@ -29,14 +29,12 @@ async def add_steam64_id(user_id, steam64_id):
         (user_id, steam64_id)
     )
 
-
 async def add_steam64_ids(users):
     await db.executemany(
         "INSERT OR REPLACE INTO users(user_id, steam64_id)"
         " VALUES (?, ?)",
         ((user['discord_id'], user['steam_id']) for user in users)
     )
-
 
 async def get_steam64_id(user_id):
     async with db.execute(
@@ -45,16 +43,26 @@ async def get_steam64_id(user_id):
                 (user_id,)
             ) as cursor:
         data = await cursor.fetchone()
-    if data is not None:
+    if not data:
+        raise ValueError(f"No steamid found for user_id {user_id}")
+    else:
         return data[0]
-    return None
 
 async def get_steam64_ids(user_ids):
     parameters = ", ".join(['?']*len(user_ids))
     async with db.execute(
-                f"SELECT steam64_id FROM users"
+                f"SELECT user_id, steam64_id FROM users"
                 f"  WHERE user_id IN ({parameters})",
                 user_ids
             ) as cursor:
-        steam64_ids = [i async for (i,) in cursor]
-    return steam64_ids
+        d = {user_id: steam64_id async for (user_id, steam64_id) in cursor}
+    # Check that all users were found in the table
+    not_found_users = []
+    for user_id in user_ids:
+        if user_id not in d.keys():
+            not_found_users.append(user_id)
+    if not_found_users:
+        raise ValueError(f"No steam64_id found for user_ids {not_found_users}")
+    else:
+        return d
+

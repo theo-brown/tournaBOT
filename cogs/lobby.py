@@ -6,7 +6,7 @@ from os import getenv
 from cogs import Cog
 from classes import Map, Team, Match
 import menus
-
+import re
 
 class LobbyCog(Cog, name='Pick/ban commands'):
     # active_lobby = None
@@ -37,7 +37,17 @@ class LobbyCog(Cog, name='Pick/ban commands'):
                 teams.append(team)
         veto_menu = menus.VetoMenu(self.bot, Match(teams[0], teams[1], gametype, bestof))
         await veto_menu.run(ctx)
-        await get5.commands.generate_config(veto_menu.match)
+        try:
+            await get5.commands.generate_config(veto_menu.match)
+        except ValueError as error:
+            if str(error).startswith("No steam64_id found for user_ids"):
+                user_ids_str = re.findall("\[(.+)\]", str(error))[0]
+                user_ids = user_ids_str.split(", ")
+                await ctx.send(f"Error: no steam64_id stored for {', '.join([f'<@{id}>' for id in user_ids])}\n"
+                               "Add your own steam id using `!steam <link to steam profile`")
+                return
+            else:
+                raise ValueError(error)
         await self.startmatch(ctx)
 
     @cmds.command()
