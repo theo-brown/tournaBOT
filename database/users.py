@@ -1,7 +1,13 @@
 from aiosqlite import Connection
-from collections.abc import Mapping, Collection
+from typing import Union, Iterable, Mapping
 
 db: Connection
+
+
+class SteamIDNotFoundError(LookupError):
+    def __init__(self, message: str, user_ids: Iterable[int]):
+        super().__init__(message)
+        self.user_ids = user_ids
 
 
 async def create():
@@ -12,8 +18,10 @@ async def create():
         ")"
     )
 
+
 async def clear():
     await db.execute("DELETE FROM users")
+
 
 async def display():
     s = "user_id\t\t\tsteam64_id"
@@ -24,33 +32,18 @@ async def display():
 
     return s
 
-async def add_steam64_id(user_id, steam64_id):
-    await db.execute(
-        "INSERT OR REPLACE INTO users(user_id, steam64_id)"
-        "   VALUES(?, ?)",
-        (user_id, steam64_id)
-    )
 
 async def add_steam64_ids(users: Mapping[int, int]):
     await db.executemany(
         "INSERT OR REPLACE INTO users(user_id, steam64_id)"
         " VALUES (?, ?)",
-        ((discord, steam) for discord,steam in users.items())
+        ((discord_id, steam_id) for discord_id, steam_id in users.items())
     )
 
-async def get_steam64_id(user_id):
-    async with db.execute(
-                "SELECT steam64_id FROM users"
-                "   WHERE user_id =?",
-                (user_id,)
-            ) as cursor:
-        data = await cursor.fetchone()
-    if not data:
-        raise ValueError(f"No steamid found for user_id {user_id}")
-    else:
-        return data[0]
 
-async def get_steam64_ids(user_ids: Collection[int]):
+async def get_steam64_ids(user_ids: Union[Iterable[int], int]):
+    if isinstance(user_ids, int):
+        user_ids = [user_ids]
     parameters = ", ".join(['?']*len(user_ids))
     async with db.execute(
                 f"SELECT user_id, steam64_id FROM users"
@@ -64,7 +57,8 @@ async def get_steam64_ids(user_ids: Collection[int]):
         if user_id not in d.keys():
             not_found_users.append(user_id)
     if not_found_users:
-        raise ValueError(f"No steam64_id found for user_ids {not_found_users}")
+        raise SteamIDNotFoundError(f"No steam64_id found for user_id(s) {not_found_users}", not_found_users)
+    if len(d) == 1:
+        return d[user_ids[0]]
     else:
         return d
-

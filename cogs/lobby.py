@@ -1,6 +1,7 @@
 from typing import Union
 from discord import Role, Member, Embed
 import get5.commands
+from database.users import SteamIDNotFoundError
 import discord.ext.commands as cmds
 from os import getenv
 from cogs import Cog
@@ -39,15 +40,12 @@ class LobbyCog(Cog, name='Pick/ban commands'):
         await veto_menu.run(ctx)
         try:
             await get5.commands.generate_config(veto_menu.match)
-        except ValueError as error:
-            if str(error).startswith("No steam64_id found for user_ids"):
-                user_ids_str = re.findall("\[(.+)\]", str(error))[0]
-                user_ids = user_ids_str.split(", ")
-                await ctx.send(f"Error: no steam64_id stored for {', '.join([f'<@{id}>' for id in user_ids])}\n"
-                               "Add your own steam id using `!steam <link to steam profile`")
+        except SteamIDNotFoundError as error:
+                await ctx.send("Error generating match config: no steam64_id stored for "
+                               f"{', '.join([f'<@{user_id}>' for user_id in error.user_ids])}\n"
+                               "Add your own steam id using `!steam <link to steam profile>`\n"
+                               "Admins can add steam ids for other users using `!steam @user <link to steam profile>`")
                 return
-            else:
-                raise ValueError(error)
         await self.startmatch(ctx)
 
     @cmds.command()

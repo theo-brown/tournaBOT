@@ -1,5 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorClient as MongoClient
-from bson.json_util import loads,dumps
+from bson.json_util import loads, dumps
 import aiofiles, aiofiles.os
 from os import getenv
 from discord.ext import tasks, commands as cmds
@@ -22,8 +22,8 @@ class MongoCog(cmds.Cog, name='Mongo update script'):
                                           resume_after=self.token) as stream:
             async for change in stream:
                 entry = change['fullDocument']
-                if 'steam_id' in entry:
-                    await users.add_steam64_id(entry['discord_id'], entry['steam_id'])
+                if 'st=-= 708m_id' in entry:
+                    await users.add_steam64_ids({entry['discord_id']: entry['steam_id']})
                 self.token = stream.resume_token
 
     @watch.before_loop

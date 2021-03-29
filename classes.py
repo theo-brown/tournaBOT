@@ -36,7 +36,11 @@ class Team:
         return [player.id for player in self.players]
     
     async def get_players_steam_ids(self):
-        return await database.users.get_steam64_ids(self.get_players_ids())
+        steam_ids = await database.users.get_steam64_ids(self.get_players_ids())
+        if isinstance(steam_ids, int):
+            return [steam_ids]
+        else:
+            return steam_ids
 
 
 wingman_maps_by_name = bidict({'Cobblestone': 'de_cbble',
