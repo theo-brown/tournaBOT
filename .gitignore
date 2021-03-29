@@ -1,7 +1,7 @@
 .idea
 get5/configs/
 *.log
-resume
+database/resume.bson
 
 ############################
 # Default Python .gitignore
