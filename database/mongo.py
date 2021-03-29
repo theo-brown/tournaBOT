@@ -3,8 +3,10 @@ from bson.json_util import loads,dumps
 import aiofiles, aiofiles.os
 from os import getenv
 from discord.ext import tasks, commands as cmds
+import logging
 from . import users
 
+resume_file = 'database/resume.bson'
 
 class MongoCog(cmds.Cog, name='Mongo update script'):
     def __init__(self, bot):
@@ -27,7 +29,7 @@ class MongoCog(cmds.Cog, name='Mongo update script'):
     @watch.before_loop
     async def get_token(self):
         try:
-            async with aiofiles.open('resume', 'rb') as tokenfile:
+            async with aiofiles.open(resume_file, 'rb') as tokenfile:
                 self.token = loads(await tokenfile.read())
         except FileNotFoundError:
             pass  # token is None by default
@@ -37,26 +39,24 @@ class MongoCog(cmds.Cog, name='Mongo update script'):
         if self.token is None:
             return
 
-        async with aiofiles.open('resume', 'wb') as tokenfile:
+        async with aiofiles.open(resume_file, 'wb') as tokenfile:
             await tokenfile.write(dumps(self.token))
 
     @watch.error
     async def log_error(self, error):
-        info = await self.bot.application_info()
-        await info.owner.send(
-            f'**{type(error).__name__}**\n{error}'
-        )
+        logging.error(exc_info=error)
 
     @cmds.command()
     @cmds.is_owner()
     async def update(self, ctx):
         async with ctx.typing():
-            await users.add_steam64_ids({
+            usermap = {
                 user['discord_id']: user['steam_id']
                     async for user in self.mongo_users.find() if 'discord_id' in user
-            })
-        await ctx.send(f'Successfully upserted {len(users_with_steam_ids)} users.')
+            }
+            await users.add_steam64_ids(usermap)
+        await ctx.send(f'Successfully upserted {len(usermap)} users.')
 
         # no point resuming after full update
-        await aiofiles.os.remove('resume')
+        await aiofiles.os.remove(resume_file)
         self.watch.restart()

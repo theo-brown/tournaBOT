@@ -1,4 +1,6 @@
 from aiosqlite import Connection
+from collections.abc import Mapping, Collection
+
 db: Connection
 
 
@@ -29,7 +31,7 @@ async def add_steam64_id(user_id, steam64_id):
         (user_id, steam64_id)
     )
 
-async def add_steam64_ids(users):
+async def add_steam64_ids(users: Mapping[int, int]):
     await db.executemany(
         "INSERT OR REPLACE INTO users(user_id, steam64_id)"
         " VALUES (?, ?)",
@@ -48,7 +50,7 @@ async def get_steam64_id(user_id):
     else:
         return data[0]
 
-async def get_steam64_ids(user_ids):
+async def get_steam64_ids(user_ids: Collection[int]):
     parameters = ", ".join(['?']*len(user_ids))
     async with db.execute(
                 f"SELECT user_id, steam64_id FROM users"
