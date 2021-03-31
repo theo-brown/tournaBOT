@@ -38,7 +38,9 @@ async def generate_config(match: Match):
         config[f"team{i+1}"] = {}
         t = config[f"team{i+1}"]
         t["name"] = team.name
-        t["players"] = [str(i) for i in await team.get_players_steam_ids()]
+        t["tag"] = ""
+        steam_ids = await team.get_players_steam_ids()
+        t["players"] = {str(steam_id): str(user.nick) for steam_id, user in zip(steam_ids, team.players)}
     
     with open("get5/configs/match_config.json", 'w') as f:
         json.dump(config, f)
